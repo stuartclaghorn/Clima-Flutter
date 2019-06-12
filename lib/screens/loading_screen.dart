@@ -1,47 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:clima/services/location.dart';
-import 'package:http/http.dart';
-import 'dart:convert';
+import 'package:clima/services/networking.dart';
+import 'location_screen.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+
 class LoadingScreen extends StatefulWidget {
   @override
   _LoadingScreenState createState() => _LoadingScreenState();
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
-  Position position;
+  double longitude;
+  double latitude;
+  String apiKey = 'a1c65e19e441ff3c25023867d5f9350b';
 
   @override
   void initState() {
     super.initState();
-    getLocation();
-    // getData();
+    getLocationData();
   }
 
-  void getLocation() async {
+  void getLocationData() async {
     Location location = Location();
-    await location.getLocation();
-    print(location.latitude);
-    print(location.longitude);
-  }
 
-  void getData() async {
-    String url = 'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&=appid=a1c65e19e441ff3c25023867d5f9350b'
-    Response response = await get(url);
-    if (response.statusCode == 200) {
-      String data = response.body;
-      // print(data);
-      var weatherDescription = jsonDecode(data)['weather'][0]['main'];
-      print(weatherDescription);
-    } else {
-      print(response.statusCode);
-    }
-    // print(response);
+    await location.getLocation();
+
+    latitude = location.latitude;
+    longitude = location.longitude;
+
+    NetworkHelper networkHelper = NetworkHelper(
+        'https://api.openweathermap.org/data/2.5/weather?lon=$longitude&lat=$latitude&appid=$apiKey&units=metric');
+
+    var weatherData = await networkHelper.getData();
+    print(weatherData);
+
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return LocationScreen(
+        locationWeather: weatherData,
+      );
+    }));
   }
 
   @override
   Widget build(BuildContext context) {
-    getData();
-    return Scaffold();
+    return Scaffold(
+      body: Center(
+        child: SpinKitDoubleBounce(
+          color: Colors.white,
+          size: 100.0,
+        ),
+      ),
+    );
   }
 }
